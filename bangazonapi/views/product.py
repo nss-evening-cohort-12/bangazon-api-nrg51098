@@ -152,8 +152,6 @@ class Products(ViewSet):
             product = Product.objects.get(pk=pk)
             serializer = ProductSerializer(product, context={'request': request})
             return Response(serializer.data)
-        except ZeroDivisionError as ex:
-            return Response({'message': ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as ex:
             return HttpResponseServerError(ex)
 
@@ -242,44 +240,38 @@ class Products(ViewSet):
                 }
             ]
         """
-        try:
-            products = Product.objects.all()
+        products = Product.objects.all()
 
-            # Support filtering by category and/or quantity
-            category = self.request.query_params.get('category', None)
-            quantity = self.request.query_params.get('quantity', None)
-            order = self.request.query_params.get('order_by', None)
-            direction = self.request.query_params.get('direction', None)
-            number_sold = self.request.query_params.get('number_sold', None)
+        # Support filtering by category and/or quantity
+        category = self.request.query_params.get('category', None)
+        quantity = self.request.query_params.get('quantity', None)
+        order = self.request.query_params.get('order_by', None)
+        direction = self.request.query_params.get('direction', None)
+        number_sold = self.request.query_params.get('number_sold', None)
 
-            if order is not None:
-                order_filter = order
+        if order is not None:
+            order_filter = order
 
-                if direction is not None:
-                    if direction == "desc":
-                        order_filter = f'-{order}'
+            if direction is not None:
+                if direction == "desc":
+                    order_filter = f'-{order}'
 
-                products = products.order_by(order_filter)
+            products = products.order_by(order_filter)
 
-            if category is not None:
-                products = products.filter(category__id=category)
+        if category is not None:
+            products = products.filter(category__id=category)
 
-            if quantity is not None:
-                products = products.order_by("-created_date")[:int(quantity)]
+        if quantity is not None:
+            products = products.order_by("-created_date")[:int(quantity)]
 
-            if number_sold is not None:
-                def sold_filter(product):
-                    if product.number_sold <= int(number_sold):
-                        return True
-                    return False
+        if number_sold is not None:
+            def sold_filter(product):
+                if product.number_sold <= int(number_sold):
+                    return True
+                return False
 
-                products = filter(sold_filter, products)
+            products = filter(sold_filter, products)
 
-            serializer = ProductSerializer(
-                products, many=True, context={'request': request})
-            return Response(serializer.data)
-        except ZeroDivisionError as ex:
-            return Response({'message': ex.args[0]}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except Exception as ex:
-            return HttpResponseServerError(ex)
-
+        serializer = ProductSerializer(
+            products, many=True, context={'request': request})
+        return Response(serializer.data)
