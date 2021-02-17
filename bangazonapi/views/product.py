@@ -6,9 +6,10 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory
+from bangazonapi.models import Product, Customer, ProductCategory, Like, customer, product
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import action
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -20,6 +21,12 @@ class ProductSerializer(serializers.ModelSerializer):
                   'average_rating', 'can_be_rated', )
         depth = 1
 
+class LikeSerializer(serializers.ModelSerializer):
+    """JSON serializer for Likes"""
+    class Meta:
+        model = Like
+        fields = ('id', 'product',)
+        depth = 1
 
 class Products(ViewSet):
     """Request handlers for Products in the Bangazon Platform"""
@@ -289,3 +296,75 @@ class Products(ViewSet):
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
         return Response(serializer.data)
+    
+
+    @action(methods=["get"], detail=False)
+    def liked(self, request):
+
+        """
+        @api {GET} /products/liked GET all likes for the current logged in user
+    
+        @apiSuccess (200) {Object[]} products Array of products that are liked
+        @apiSuccessExample {json} Success
+            [
+                {
+                    "id": 101,
+                    "url": "http://localhost:8000/products/101",
+                    "name": "Kite",
+                    "price": 14.99,
+                    "number_sold": 0,
+                    "description": "It flies high",
+                    "quantity": 60,
+                    "created_date": "2019-10-23",
+                    "location": "Pittsburgh",
+                    "image_path": null,
+                    "average_rating": 0,
+                    "category": {
+                        "url": "http://localhost:8000/productcategories/6",
+                        "name": "Games/Toys"
+                    }
+                }
+            ]
+        """
+        customer = Customer.objects.get(user=request.auth.user)
+        likes = Like.objects.filter(customer=customer)
+        serializer = LikeSerializer(likes, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+    @action(methods=['post', 'delete'], detail=True)
+    def like(self, request, pk=None):
+        """
+        @api {POST/DELETE} /products/1/like add or remove like for the current product for current user
+
+        Nothing needed to send inside the request body    
+        """
+
+        current_user = Customer.objects.get(user=request.auth.user)
+        product= Product.objects.get(pk=pk)
+
+        if request.method == "DELETE":
+            
+            try:
+                like = Like.objects.get(customer=current_user, product=product)
+                like.delete()
+            except Like.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
+
+        if request.method == "POST":
+            
+            try:
+                like = Like.objects.get(customer=current_user, product=product)
+            except Like.DoesNotExist as ex:
+                new_like = Like()
+                new_like.customer = current_user
+                new_like.product = product
+                new_like.save()
+
+                serializer = LikeSerializer(new_like, context={'request': request})
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
