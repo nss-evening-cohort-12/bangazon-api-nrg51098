@@ -4,7 +4,7 @@ from bangazonapi.models import Product
 from bangazonreports.views import Connection
 
 
-def expensive_list(request):
+def inexpensive_list(request):
     if request.method == 'GET':
         with sqlite3.connect(Connection.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -17,7 +17,7 @@ def expensive_list(request):
                     p.description,
                     p.price
                 from bangazonapi_product p
-                where p.price >= 1000
+                where p.price < 1000
             """)
 
             dataset = db_cursor.fetchall()
@@ -30,9 +30,9 @@ def expensive_list(request):
                 products[pid]['description'] = row["description"]
                 products[pid]['price'] = row["price"]
 
-        template = 'products/expensive.html'
+        template = 'products/inexpensive.html'
         context = {
-            'expensive_list': products.values
+            'inexpensive_list': products.values
         }
 
         return render(request, template, context)
