@@ -17,7 +17,7 @@ def inexpensive_list(request):
                     p.description,
                     p.price
                 from bangazonapi_product p
-                where p.price <= 999
+                where p.price < 1000
             """)
 
             dataset = db_cursor.fetchall()
@@ -36,3 +36,4 @@ def inexpensive_list(request):
         }
 
         return render(request, template, context)
+        

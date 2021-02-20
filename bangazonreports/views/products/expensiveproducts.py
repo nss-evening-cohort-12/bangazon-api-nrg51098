@@ -36,3 +36,4 @@ def expensive_list(request):
         }
 
         return render(request, template, context)
+        

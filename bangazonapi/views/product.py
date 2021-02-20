@@ -335,6 +335,13 @@ class Products(ViewSet):
     @action(methods=['post', 'delete'], detail=True)
     def like(self, request, pk=None):
         """
+
+            ********* VIP - PYTHON HAS SIMPLE LOGIC TO HIT THIS FUNCTION THE FUNCTION NAME NEEDS TO SAME AS URL LIKE /product/1/like 
+            THE DETAIL TRUE OR FALSE WILL DECIDE IF PK WILL BE PASSED OR NOT  
+
+            IF THE DETAILS IS FALSE LIKE ABOVE LIKED FUNCTION WHERE YOU ARE GETTING MULTIPLE PRODUCTS YOU NEED MAKE THE DETAILS = FALSE SO IT DOES NOT GIVE YOU pk
+            @api {GET} /products/liked GET all likes for the current logged in user *********
+        
         @api {POST/DELETE} /products/1/like add or remove like for the current product for current user
 
         Nothing needed to send inside the request body    
